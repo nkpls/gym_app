@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Tracker</title>
+    <!-- Enlace al manifest para que se pueda instalar -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#28a745">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; padding: 15px; }
+        .registro { border-bottom: 1px solid #eee; padding: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🏋️‍♂️ Gym Tracker</h2>
+        <input type="text" id="ejercicio" placeholder="Ejercicio (Ej. Press Banca)">
+        <input type="number" id="peso" placeholder="Peso (kg)" step="0.5">
+        <input type="number" id="repes" placeholder="Repeticiones">
+        <button onclick="guardarRegistro()">Guardar Serie</button>
+    </div>
+
+    <div class="card">
+        <h3>Historial</h3>
+        <div id="historial"></div>
+    </div>
+
+    <script>
+        // Registrar el Service Worker para funcionamiento offline
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        let entrenamientos = JSON.parse(localStorage.getItem('gymData')) || [];
+        mostrarHistorial();
+
+        function guardarRegistro() {
+            const ejercicio = document.getElementById('ejercicio').value;
+            const peso = document.getElementById('peso').value;
+            const repes = document.getElementById('repes').value;
+
+            if(!ejercicio || !peso) return alert('Por favor, indica ejercicio y peso.');
+
+            const nuevoRegistro = {
+                ejercicio, peso, repes, fecha: new Date().toLocaleString()
+            };
+
+            entrenamientos.push(nuevoRegistro);
+            localStorage.setItem('gymData', JSON.stringify(entrenamientos));
+            
+            // Limpiar solo peso y repes para facilitar la siguiente serie del mismo ejercicio
+            document.getElementById('peso').value = '';
+            document.getElementById('repes').value = '';
+            
+            mostrarHistorial();
+        }
+
+        function mostrarHistorial() {
+            const contenedor = document.getElementById('historial');
+            contenedor.innerHTML = '';
+            entrenamientos.slice().reverse().forEach(ent => {
+                contenedor.innerHTML += `
+                    <div class="registro">
+                        <strong>${ent.ejercicio}</strong>: ${ent.peso}kg x ${ent.repes} reps 
+                        <br><span style="color:gray; font-size: 0.8em;">${ent.fecha}</span>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
