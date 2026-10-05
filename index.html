@@ -28,7 +28,7 @@
         <h3>Historial</h3>
         <div id="historial"></div>
     </div>
-
+<script>
 // Registrar el Service Worker para funcionamiento offline
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
@@ -105,5 +105,6 @@ function mostrarHistorial() {
         contenedor.innerHTML += htmlDia;
     });
 }
+</script>
 </body>
 </html>
