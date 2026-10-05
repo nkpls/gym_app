@@ -29,48 +29,81 @@
         <div id="historial"></div>
     </div>
 
-    <script>
-        // Registrar el Service Worker para funcionamiento offline
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+// Registrar el Service Worker para funcionamiento offline
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
+
+let entrenamientos = JSON.parse(localStorage.getItem('gymData')) || [];
+mostrarHistorial();
+
+function guardarRegistro() {
+    const ejercicio = document.getElementById('ejercicio').value;
+    const peso = document.getElementById('peso').value;
+    const repes = document.getElementById('repes').value;
+
+    if(!ejercicio || !peso) return alert('Por favor, indica ejercicio y peso.');
+
+    const ahora = new Date();
+    const nuevoRegistro = {
+        ejercicio, 
+        peso, 
+        repes, 
+        dia: ahora.toLocaleDateString(), // Guarda la fecha (Ej: 05/10/2026)
+        hora: ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // Guarda la hora (Ej: 19:30)
+    };
+
+    entrenamientos.push(nuevoRegistro);
+    localStorage.setItem('gymData', JSON.stringify(entrenamientos));
+    
+    // Limpiar solo peso y repes para la siguiente serie
+    document.getElementById('peso').value = '';
+    document.getElementById('repes').value = '';
+    
+    mostrarHistorial();
+}
+
+function mostrarHistorial() {
+    const contenedor = document.getElementById('historial');
+    contenedor.innerHTML = '';
+    
+    // 1. Agrupar los registros por día
+    const gruposPorDia = {};
+    entrenamientos.forEach(ent => {
+        // Retrocompatibilidad por si ya habías guardado datos con el código anterior
+        const dia = ent.dia || ent.fecha.split(',')[0]; 
+        
+        if (!gruposPorDia[dia]) {
+            gruposPorDia[dia] = [];
         }
+        gruposPorDia[dia].push(ent);
+    });
 
-        let entrenamientos = JSON.parse(localStorage.getItem('gymData')) || [];
-        mostrarHistorial();
+    // 2. Ordenar los días (del más reciente al más antiguo)
+    const diasOrdenados = Object.keys(gruposPorDia).reverse();
 
-        function guardarRegistro() {
-            const ejercicio = document.getElementById('ejercicio').value;
-            const peso = document.getElementById('peso').value;
-            const repes = document.getElementById('repes').value;
-
-            if(!ejercicio || !peso) return alert('Por favor, indica ejercicio y peso.');
-
-            const nuevoRegistro = {
-                ejercicio, peso, repes, fecha: new Date().toLocaleString()
-            };
-
-            entrenamientos.push(nuevoRegistro);
-            localStorage.setItem('gymData', JSON.stringify(entrenamientos));
-            
-            // Limpiar solo peso y repes para facilitar la siguiente serie del mismo ejercicio
-            document.getElementById('peso').value = '';
-            document.getElementById('repes').value = '';
-            
-            mostrarHistorial();
-        }
-
-        function mostrarHistorial() {
-            const contenedor = document.getElementById('historial');
-            contenedor.innerHTML = '';
-            entrenamientos.slice().reverse().forEach(ent => {
-                contenedor.innerHTML += `
-                    <div class="registro">
-                        <strong>${ent.ejercicio}</strong>: ${ent.peso}kg x ${ent.repes} reps 
-                        <br><span style="color:gray; font-size: 0.8em;">${ent.fecha}</span>
-                    </div>
-                `;
-            });
-        }
-    </script>
+    // 3. Dibujar en la pantalla
+    diasOrdenados.forEach(dia => {
+        // Cabecera del día
+        let htmlDia = `
+            <div style="background:#e2e8f0; padding:10px; border-radius:5px; margin-top:15px; font-weight:bold; color:#333;">
+                📅 ${dia}
+            </div>
+        `;
+        
+        // Series de ese día (invertidas para ver la última arriba)
+        gruposPorDia[dia].slice().reverse().forEach(ent => {
+            const hora = ent.hora ? ent.hora : '';
+            htmlDia += `
+                <div class="registro" style="margin-left: 10px;">
+                    <strong>${ent.ejercicio}</strong>: ${ent.peso}kg x ${ent.repes} reps 
+                    <span style="color:gray; font-size: 0.8em; float:right;">${hora}</span>
+                </div>
+            `;
+        });
+        
+        contenedor.innerHTML += htmlDia;
+    });
+}
 </body>
 </html>
